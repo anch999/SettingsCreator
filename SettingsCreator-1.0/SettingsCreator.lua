@@ -1,4 +1,4 @@
-local MAJOR, MINOR = "SettingsCreator-1.0", 8
+local MAJOR, MINOR = "SettingsCreator-1.0", 9
 local SettingsCreator, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not SettingsCreator then return end -- No Upgrade needed.
@@ -217,9 +217,25 @@ function SettingsCreator:CreateOptionsPages(data, db)
     if InterfaceOptionsFrame:GetWidth() < 850 then InterfaceOptionsFrame:SetWidth(850) end
 	local options = { frame = {} }
 		options.frame.panel = CreateFrame("FRAME", data.AddonName.."OptionsFrame", UIParent, nil)
-    	local fstring = options.frame.panel:CreateFontString(options.frame, "OVERLAY", "GameFontNormal")
-		fstring:SetText(data.TitleText)
-		fstring:SetPoint("TOPLEFT", 15, -15)
+    	options.frame.panel.Title = options.frame.panel:CreateFontString(options.frame, "OVERLAY", "GameFontNormal")
+		options.frame.panel.Title:SetText(data.TitleText)
+		options.frame.panel.Title:SetPoint("TOPLEFT", 35, -15)
+        local discordLink = GetAddOnMetadata(data.AddonName, "X-Discord")
+        if discordLink then
+            options.frame.panel.discordLink = CreateFrame("Button", "$parentDiscordLink", options.frame.panel)
+            options.frame.panel.discordLink:SetPoint("LEFT", options.frame.panel.Title, "RIGHT", 5, 0)
+            options.frame.panel.discordLink.Lable = options.frame.panel.discordLink:CreateFontString(nil , "BORDER", "GameFontNormal")
+            options.frame.panel.discordLink.Lable:SetJustifyH("LEFT")
+            options.frame.panel.discordLink.Lable:SetPoint("LEFT", 0, 0)
+            options.frame.panel.discordLink.Lable:SetText("|cffFFFFFF( Discord Link )")
+            options.frame.panel.discordLink:SetScript("OnEnter", function(button) showTooltip(button, "Click to copy to clipboard") end)
+            options.frame.panel.discordLink:SetScript("OnLeave", function(button) GameTooltip:Hide() end)
+            options.frame.panel.discordLink:SetScript("OnClick", function()
+                Internal_CopyToClipboard(discordLink)
+                DEFAULT_CHAT_FRAME:AddMessage("Discord link copyed to clipboard")
+            end)
+	        options.frame.panel.discordLink:SetSize(options.frame.panel.discordLink.Lable:GetStringWidth(), options.frame.panel.discordLink.Lable:GetStringHeight())
+        end
 		options.frame.panel.name = data.AddonName
 		InterfaceOptions_AddCategory(options.frame.panel)
         local frame = options.frame.panel
