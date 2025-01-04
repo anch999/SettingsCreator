@@ -1,4 +1,4 @@
-local MAJOR, MINOR = "SettingsCreator-1.0", 9
+local MAJOR, MINOR = "SettingsCreator-1.0", 10
 local SettingsCreator, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not SettingsCreator then return end -- No Upgrade needed.
@@ -43,41 +43,48 @@ local function InitializeDropDown(self)
 end
 
 local function showTooltip(frame, text)
+    if not text then return end
     GameTooltip:SetOwner(frame, "ANCHOR_TOPLEFT", 0, 20)
-    GameTooltip:AddLine(text)
+    GameTooltip:SetOwner(frame, "ANCHOR_TOPLEFT", 0, 20)
+    if type(text) == "table" then
+        for _, text in pairs(text) do
+            GameTooltip:AddLine(text)
+        end
+    else
+        GameTooltip:AddLine(text)
+    end
     GameTooltip:Show()
 end
 
+local playerName = UnitName("player")
+local realmName = GetRealmName()
+
 --[[ DB = Name of the db you want to setup
-CheckBox = Global name of the checkbox if it has one and first numbered table entry is the boolean
-Text = Global name of where the text and first numbered table entry is the default text 
-Frame = Frame or button etc you want hidden/shown at start based on condition ]]
+if there is a table sent called profile it will setup a profile for each character/realm
+]]
 function SettingsCreator:SetupDB(dbName, defaultList)
     _G[dbName] = _G[dbName] or {}
+    local playerKey = playerName.." - "..realmName
     local db = _G[dbName]
     for table, v in pairs(defaultList) do
         if not db[table] and db[table] ~= false then
-            if type(v) == "table" then
-                db[table] = v[1]
-            else
-                db[table] = v
-            end
+            db[table] = v
         end
-        if type(v) == "table" then
-            if v.CheckBox and _G[v.CheckBox] then
-                _G[v.CheckBox]:SetChecked(db[table])
+        if table == "profile" then
+            db.profiles = db.profiles or {}
+            if db.profiles[playerKey] then
+                for tableName, value in pairs(v) do
+                    if not db.profiles[playerKey][tableName] and db.profiles[playerKey][tableName] ~= false then
+                        db.profiles[playerKey][tableName] = value
+                    end
+                end
+            else
+                db.profiles[playerKey] = v
             end
-            if v.Text and _G[v.Text] then
-                _G[v.Text]:SetText(db[table])
-            end
-            if v.ShowFrame and _G[v.Frame] then
-                if db[table] then _G[v.Frame]:Show() else _G[v.Frame]:Hide() end
-            end
-            if v.HideFrame and _G[v.HideFrame] then
-                if db[table] then _G[v.HideFrame]:Hide() else _G[v.HideFrame]:Show() end
-            end
+            db.profile = db.profiles[playerKey]
         end
     end
+    
     return db
 end
 
@@ -89,10 +96,10 @@ local function CreateCheckButton(options, db, frame, addonName, setPoint, opTabl
     options[opTable.Name].Lable:SetPoint("LEFT", 30, 0)
     options[opTable.Name].Lable:SetText(opTable.Lable)
     options[opTable.Name]:SetScript("OnClick", opTable.OnClick)
-        options[opTable.Name]:SetScript("OnEnter", function()
-        if opTable.Tooltip and type(opTable.Tooltip) == "string" then showTooltip(options[opTable.Name], opTable.Tooltip) end
+    options[opTable.Name]:SetScript("OnEnter", function()
+        showTooltip(options[opTable.Name], opTable.Tooltip or opTable.Lable)
         if opTable.OnEnter then opTable.OnEnter() end
-        end)
+    end)
     options[opTable.Name]:SetScript("OnLeave", function()
     if opTable.OnLeave then opTable.OnLeave() end
     GameTooltip:Hide()
@@ -108,8 +115,8 @@ local function CreateButton(options, db, frame, addonName, setPoint, opTable)
     options[opTable.Name]:SetPoint(unpack(setPoint))
     options[opTable.Name]:SetText(opTable.Lable)
     options[opTable.Name]:SetScript("OnClick", opTable.OnClick)
-        options[opTable.Name]:SetScript("OnEnter", function()
-        if opTable.Tooltip and type(opTable.Tooltip) == "string" then showTooltip(options[opTable.Name], opTable.Tooltip) end
+    options[opTable.Name]:SetScript("OnEnter", function()
+        showTooltip(options[opTable.Name], opTable.Tooltip or opTable.Lable)
         if opTable.OnEnter then opTable.OnEnter() end
         end)
     options[opTable.Name]:SetScript("OnLeave", function()
@@ -130,9 +137,9 @@ local function CreateDropDownMenu(options, db, frame, addonName, setPoint, opTab
     options[opTable.Name].Lable:SetText(opTable.Lable)
     options[opTable.Name]:SetScript("OnClick", opTable.OnClick)
     options[opTable.Name]:SetScript("OnEnter", function()
-        if opTable.Tooltip and type(opTable.Tooltip) == "string" then showTooltip(options[opTable.Name], opTable.Tooltip) end
+        showTooltip(options[opTable.Name], opTable.Tooltip or opTable.Lable)
         if opTable.OnEnter then opTable.OnEnter() end
-        end)
+    end)
     options[opTable.Name]:SetScript("OnLeave", function()
         if opTable.OnLeave then opTable.OnLeave() end
         GameTooltip:Hide()
@@ -188,8 +195,8 @@ local function CreateInputBox(options, db, frame, addonName, setPoint, opTable)
     options[opTable.Name].Lable:SetJustifyH("LEFT")
     options[opTable.Name].Lable:SetPoint("BOTTOMLEFT", options[opTable.Name], "TOPLEFT", 0, 0)
     options[opTable.Name].Lable:SetText(opTable.Lable)
-        options[opTable.Name]:SetScript("OnEnter", function()
-        if opTable.Tooltip and type(opTable.Tooltip) == "string" then showTooltip(options[opTable.Name], opTable.Tooltip) end
+    options[opTable.Name]:SetScript("OnEnter", function()
+        showTooltip(options[opTable.Name], opTable.Tooltip or opTable.Lable)
         if opTable.OnEnter then opTable.OnEnter() end
         end)
     options[opTable.Name]:SetScript("OnLeave", function()
@@ -199,6 +206,26 @@ local function CreateInputBox(options, db, frame, addonName, setPoint, opTable)
     options[opTable.Name]:SetScript("OnTextChanged", opTable.OnTextChanged)
     options[opTable.Name]:SetScript("OnEnterPressed", opTable.OnEnterPressed)
     return options[opTable.Name]
+end
+
+local function CreateScrollFrame(data, tabFrame, tabNum)
+    local frameWidth = InterfaceOptionsFramePanelContainer:GetWidth()
+    local frameHeight = InterfaceOptionsFramePanelContainer:GetHeight()
+    tabFrame.scrollFrame = CreateFrame("ScrollFrame", data.AddonName.."OptionsFrameScrollFrame_"..tabNum, tabFrame, "UIPanelScrollFrameTemplate")
+    tabFrame.frame = CreateFrame("Frame", data.AddonName.."OptionsFrame_"..tabNum, tabFrame.scrollFrame)
+    tabFrame.scrollFrame:SetScrollChild(tabFrame.frame)
+    tabFrame.scrollFrame:SetPoint("TOPLEFT", tabFrame, "TOPLEFT", 10, -45)
+    tabFrame.scrollFrame:SetWidth(frameWidth-45)
+    tabFrame.scrollFrame:SetHeight(frameHeight-65)
+    tabFrame.scrollFrame:SetHorizontalScroll(-50)
+    tabFrame.scrollFrame:SetVerticalScroll(50)
+    tabFrame.scrollFrame:EnableMouse(true)
+    tabFrame.scrollFrame:SetVerticalScroll(0)
+    tabFrame.scrollFrame:SetHorizontalScroll(0)
+    tabFrame.frame:SetPoint("TOPLEFT", tabFrame.scrollFrame, "TOPLEFT", 0, 0)
+    tabFrame.frame:SetWidth(frameWidth-45)
+    tabFrame.frame:SetHeight(frameHeight-65)
+    return tabFrame.frame
 end
 
 local function CreateTab(options, tabNum, data, tab)
@@ -220,6 +247,7 @@ function SettingsCreator:CreateOptionsPages(data, db)
     	options.frame.panel.Title = options.frame.panel:CreateFontString(options.frame, "OVERLAY", "GameFontNormal")
 		options.frame.panel.Title:SetText(data.TitleText)
 		options.frame.panel.Title:SetPoint("TOPLEFT", 35, -15)
+        options.frame.panel.Title:SetTextHeight(15)
         local discordLink = GetAddOnMetadata(data.AddonName, "X-Discord")
         if discordLink then
             options.frame.panel.discordLink = CreateFrame("Button", "$parentDiscordLink", options.frame.panel)
@@ -227,8 +255,8 @@ function SettingsCreator:CreateOptionsPages(data, db)
             options.frame.panel.discordLink.Lable = options.frame.panel.discordLink:CreateFontString(nil , "BORDER", "GameFontNormal")
             options.frame.panel.discordLink.Lable:SetJustifyH("LEFT")
             options.frame.panel.discordLink.Lable:SetPoint("LEFT", 0, 0)
-            options.frame.panel.discordLink.Lable:SetText("|cffFFFFFF( Discord Link )")
-            options.frame.panel.discordLink:SetScript("OnEnter", function(button) showTooltip(button, "Click to copy to clipboard") end)
+            options.frame.panel.discordLink.Lable:SetText("|cffFFFFFF(Discord Link)")
+            options.frame.panel.discordLink:SetScript("OnEnter", function(button) showTooltip(button, {discordLink,"Click to copy to clipboard"}) end)
             options.frame.panel.discordLink:SetScript("OnLeave", function(button) GameTooltip:Hide() end)
             options.frame.panel.discordLink:SetScript("OnClick", function()
                 Internal_CopyToClipboard(discordLink)
@@ -238,9 +266,10 @@ function SettingsCreator:CreateOptionsPages(data, db)
         end
 		options.frame.panel.name = data.AddonName
 		InterfaceOptions_AddCategory(options.frame.panel)
-        local frame = options.frame.panel
+        local tabFrame = options.frame.panel
         for tabNum, tab in ipairs(data) do
-            frame = CreateTab(options, tabNum, data, tab) or frame
+            tabFrame = CreateTab(options, tabNum, data, tab) or tabFrame
+            local frame = CreateScrollFrame(data, tabFrame, tabNum)
             local lastFrame
             for coloum, side in pairs(tab) do
                 local point = -10
