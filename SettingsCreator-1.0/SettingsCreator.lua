@@ -60,7 +60,7 @@ local playerName = UnitName("player")
 local realmName = GetRealmName()
 
 --[[ DB = Name of the db you want to setup
-if there is a table sent called profile it will setup a profile for each character/realm
+if there is a table sent called profile it will setup a profile for the logged in character/realm
 ]]
 function SettingsCreator:SetupDB(dbName, defaultList)
     _G[dbName] = _G[dbName] or {}
@@ -84,7 +84,6 @@ function SettingsCreator:SetupDB(dbName, defaultList)
             db.profile = db.profiles[playerKey]
         end
     end
-    
     return db
 end
 
