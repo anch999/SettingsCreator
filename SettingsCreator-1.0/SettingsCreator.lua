@@ -1,4 +1,4 @@
-local MAJOR, MINOR = "SettingsCreator-1.0", 11
+local MAJOR, MINOR = "SettingsCreator-1.0", 12
 local SettingsCreator, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not SettingsCreator then return end -- No Upgrade needed.
@@ -129,7 +129,7 @@ local function CreateCheckButton(options, db, frame, addonName, setPoint, opTabl
     GameTooltip:Hide()
     end)
     options[opTable.Name]:SetScript("OnShow", function() if opTable.OnShow then opTable.OnShow(options[opTable.Name]) end end)
-    options[opTable.Name]:SetChecked(db[opTable.Name] or false)
+    options[opTable.Name]:SetChecked((db and db[opTable.Name]) or false)
     checkBoxs[addonName] = checkBoxs[addonName] or {}
     tinsert(checkBoxs[addonName], {options[opTable.Name], opTable.Name})
     return options[opTable.Name]
@@ -287,7 +287,7 @@ function SettingsCreator:CreateOptionsPages(data, db)
         for tabNum, tab in ipairs(data) do
             tabFrame = CreateTab(options, tabNum, data, tab) or tabFrame
             local frame = CreateScrollFrame(data, tabFrame, tabNum)
-            local lastFrame
+            local lastFrame, lastFrameType
             for coloum, side in pairs(tab) do
                 local point = -10
                 if type(side) == "table" then
@@ -312,6 +312,9 @@ function SettingsCreator:CreateOptionsPages(data, db)
                         elseif option.Type == "Menu" then
                             if option.Position then
                                 setPoint = (option.Position == "Left") and {"RIGHT", lastFrame, "LEFT", -2, 0} or (option.Position == "Right") and {"LEFT", lastFrame, "RIGHT", 2, 0}
+                            elseif lastFrameType == "Slider" then
+                                point = point -50
+                                setPoint = (coloum == "Left") and {"TOPLEFT", 20, point} or (coloum == "Right") and {"TOPLEFT", 337, point}
                             else
                                 point = point -35
                                 setPoint = (coloum == "Left") and {"TOPLEFT", 20, point} or (coloum == "Right") and {"TOPLEFT", 337, point}
@@ -325,6 +328,7 @@ function SettingsCreator:CreateOptionsPages(data, db)
                                 setPoint = (coloum == "Left") and {"TOPLEFT", 35, point} or (coloum == "Right") and {"TOPLEFT", 355, point}
                                 lastFrame = CreateSlider(options, db, frame, data.AddonName, setPoint, option )
                             end
+                            lastFrameType = "Slider"
                         elseif option.Type == "EditBox" then
                             if option.Position then
                                 setPoint = (option.Position == "Left") and {"RIGHT", lastFrame, "LEFT", -2, 0} or (option.Position == "Right") and {"LEFT", lastFrame, "RIGHT", 2, 0}
@@ -333,11 +337,17 @@ function SettingsCreator:CreateOptionsPages(data, db)
                                 setPoint = (coloum == "Left") and {"TOPLEFT", 30, point} or (coloum == "Right") and {"TOPLEFT", 355, point}
                             end
                             lastFrame = CreateInputBox(options, db, frame, data.AddonName, setPoint, option )
+                            lastFrameType = "InputBox"
                         end
                     end
                 end
             end
         end
+
+    if data.About and LibStub:GetLibrary("LibAboutPanel", true) then
+        LibStub("LibAboutPanel").new(data.AddonName, data.AddonName)
+    end
+
     return options
 end
 
