@@ -1,4 +1,4 @@
-local MAJOR, MINOR = "SettingsCreator-1.0", 12
+local MAJOR, MINOR = "SettingsCreator-1.0", 13
 local SettingsCreator, oldminor = LibStub:NewLibrary(MAJOR, MINOR)
 
 if not SettingsCreator then return end -- No Upgrade needed.
@@ -258,6 +258,7 @@ local function CreateTab(options, tabNum, data, tab)
 end
 
 function SettingsCreator:CreateOptionsPages(data, db)
+    if not data and not db then return end
     if InterfaceOptionsFrame:GetWidth() < 850 then InterfaceOptionsFrame:SetWidth(850) end
 	local options = { frame = {} }
 		options.frame.panel = CreateFrame("FRAME", data.AddonName.."OptionsFrame", UIParent, nil)
